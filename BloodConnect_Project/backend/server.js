@@ -43,9 +43,6 @@ async function startServer() {
   if (process.env.NODE_ENV === 'production' && !process.env.MONGO_URI) {
     throw new Error('MONGO_URI must be configured in production.');
   }
-  if (process.env.NODE_ENV === 'production' && !emailConfigured) {
-    throw new Error('SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS and SMTP_FROM must be configured in production.');
-  }
 
   if (MONGO_URI.startsWith('mongodb+srv://')) {
     const mongoHost = new URL(MONGO_URI).hostname;
@@ -65,10 +62,16 @@ async function startServer() {
 
   await mongoose.connect(MONGO_URI);
   console.log('Connected to MongoDB.');
+  
   if (emailConfigured) {
-    await verifyEmailConfiguration();
-    console.log('SMTP email delivery is ready.');
+    try {
+      await verifyEmailConfiguration();
+      console.log('SMTP email delivery is ready.');
+    } catch (err) {
+      console.log('SMTP check skipped or failed:', err.message);
+    }
   }
+
   app.listen(PORT, () => {
     console.log(`Blood Connect is listening on port ${PORT}.`);
   });
